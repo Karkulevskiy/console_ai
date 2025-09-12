@@ -1,6 +1,12 @@
 package main
 
-import "github.com/rivo/tview"
+import (
+	"go_ai/logging"
+
+	"github.com/atotto/clipboard"
+	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
+)
 
 func newModelList() *tview.List {
 	models, err := getAvailableModels()
@@ -17,10 +23,18 @@ func newModelList() *tview.List {
 }
 
 func newResponseBox() *tview.TextView {
-	responseBox := tview.NewTextView().
-		SetDynamicColors(true)
-	responseBox.SetBorder(true).
-		SetTitle("Ответ")
+	responseBox := tview.NewTextView().SetDynamicColors(true)
+	responseBox.SetBorder(true).SetTitle("Ответ").
+		SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			if event.Key() == tcell.KeyCtrlY {
+				text := responseBox.GetText(true)
+				if err := clipboard.WriteAll(text); err != nil {
+					logging.Log(err.Error())
+				}
+				return nil
+			}
+			return event
+		})
 	return responseBox
 }
 

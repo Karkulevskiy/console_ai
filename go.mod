@@ -5,6 +5,7 @@ go 1.24.6
 require github.com/firebase/genkit/go v1.0.1
 
 require (
+	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/gdamore/tcell/v2 v2.8.1 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect

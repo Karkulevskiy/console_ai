@@ -18,33 +18,18 @@ func mockResponse() (domain.Response, error) {
 }
 
 func askAi(c echo.Context) error {
-	// Придумать стандратный формат инпута
-	// Его парсинг, валидация
-	// Запрос к гемини
-
 	req := domain.Request{}
-
 	if err := c.Bind(&req); err != nil {
 		slog.Error("failed to unmarshall request")
 		return err
 	}
 
-	fmt.Println("Input")
-	fmt.Println(req.Input)
-	resp, err := mockResponse()
+	resp, err := ai.AskAI(c.Request().Context(), req)
 	if err != nil {
-
+		return c.JSON(http.StatusInternalServerError, err)
 	}
-	return c.JSON(http.StatusOK, resp)
 
-	// resp, err := ai.AskAI(c.Request().Context(), req)
-	// fmt.Println("RESPONSE:")
-	// fmt.Println(resp)
-	// if err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, err)
-	// }
-	//
-	// return c.JSON(http.StatusOK, resp)
+	return c.JSON(http.StatusOK, resp)
 }
 
 func askAiWithManyTries(c echo.Context) error {

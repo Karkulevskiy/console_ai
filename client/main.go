@@ -35,7 +35,29 @@ func main() {
 			AddItem(input, 0, 1, false),
 			0, 3, false)
 
-	if err := app.SetRoot(flex, true).EnableMouse(true).Run(); err != nil {
+	focusables := []tview.Primitive{modelList, responseBox, input}
+	focusIndex := 0
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyTAB:
+			focusIndex = (focusIndex + 1) % len(focusables)
+			app.SetFocus(focusables[focusIndex])
+			return nil
+		case tcell.KeyBacktab:
+			focusIndex = (focusIndex - 1 + len(focusables)) % len(focusables)
+			app.SetFocus(focusables[focusIndex])
+			return nil
+		case tcell.KeyEsc:
+			app.Stop()
+			return nil
+		}
+		return event
+	})
+
+	if err := app.SetRoot(flex, true).
+		EnableMouse(false).
+		EnablePaste(true).
+		Run(); err != nil {
 		panic(err)
 	}
 }
