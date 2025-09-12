@@ -7,13 +7,12 @@ import (
 	"go_ai/domain"
 	"io"
 	"net/http"
-	"path"
 )
 
 const serverUrl = "http://127.0.0.1:8080/"
 
 var (
-	availableModelsUrl = path.Join(serverUrl, "models")
+	availableModelsUrl = serverUrl + "models"
 )
 
 func get[Resp any](url string) (Resp, error) {

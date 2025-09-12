@@ -68,10 +68,48 @@ func askAiWithManyTries(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
-func availableModels(c echo.Context) error {
+type ModelRequest struct {
+	Name    string `json:"name"`
+	NewName string `json:"new_name,omitempty"`
+}
+
+func getModelsHandler(c echo.Context) error {
 	models, err := db.GetAvailableModels(c.Request().Context())
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, models)
+}
+
+func addModelHandler(c echo.Context) error {
+	req := ModelRequest{}
+	if err := c.Bind(&req); err != nil || req.Name == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+	}
+	if err := db.AddModel(c.Request().Context(), req.Name); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, map[string]string{"status": "added"})
+}
+
+func deleteModelHandler(c echo.Context) error {
+	req := ModelRequest{}
+	if err := c.Bind(&req); err != nil || req.Name == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+	}
+	if err := db.DeleteModel(c.Request().Context(), req.Name); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+func updateModelHandler(c echo.Context) error {
+	req := ModelRequest{}
+	if err := c.Bind(&req); err != nil || req.Name == "" || req.NewName == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+	}
+	if err := db.UpdateModel(c.Request().Context(), req.Name, req.NewName); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, map[string]string{"status": "updated"})
 }
