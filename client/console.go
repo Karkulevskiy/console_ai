@@ -43,3 +43,13 @@ func newInput() *tview.TextArea {
 	input.SetBorder(true).SetTitle("Промт:")
 	return input
 }
+
+func newHelpBar() *tview.TextView {
+	help := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText("[yellow]TAB/Shift+TAB[-]: переключение фокуса   " +
+			"[yellow]Ctrl+Y[-]: копировать ответ   " +
+			"[yellow]ESC[-]: выход")
+	help.SetBorder(true).SetTitle("Подсказки")
+	return help
+}

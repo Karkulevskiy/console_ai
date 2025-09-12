@@ -13,6 +13,7 @@ func main() {
 	responseBox := newResponseBox()
 	input := newInput()
 	inHandler := newInputHandler()
+	helpBar := newHelpBar()
 
 	input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
@@ -32,7 +33,8 @@ func main() {
 		AddItem(modelList, 20, 1, true).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(responseBox, 0, 3, false).
-			AddItem(input, 0, 1, false),
+			AddItem(input, 0, 1, false).
+			AddItem(helpBar, 3, 1, false),
 			0, 3, false)
 
 	focusables := []tview.Primitive{modelList, responseBox, input}
