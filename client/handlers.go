@@ -25,7 +25,7 @@ func newInputHandler() func(context.Context, string, string) string {
 			if err != nil {
 				logging.Log(err.Error())
 			} else {
-				out.Code = highlightedCode
+				out.Code = addTabsToCode(highlightedCode)
 			}
 		}
 
@@ -38,6 +38,15 @@ func newInputHandler() func(context.Context, string, string) string {
 
 func getAvailableModels() ([]string, error) {
 	return get[[]string](availableModelsUrl)
+}
+
+func addTabsToCode(code string) string {
+	var sb strings.Builder
+	splittedCode := strings.SplitSeq(code, "\n")
+	for line := range splittedCode {
+		sb.WriteString("\t\t" + line + "\n")
+	}
+	return sb.String()
 }
 
 func highlightCode(r domain.Response) (string, error) {

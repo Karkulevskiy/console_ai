@@ -2,6 +2,7 @@ package domain
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Request struct {
@@ -23,5 +24,15 @@ type Response struct {
 }
 
 func (r Response) String() string {
-	return fmt.Sprintf("\n\t\"output\": %s\n\t\"code\":\n\n%s\n", r.Output, r.Code)
+	var sb strings.Builder
+	if strings.TrimSpace(r.Output) != "" {
+		sb.WriteString(fmt.Sprintf("\n\t\"output\": %s", r.Output))
+	}
+	if strings.TrimSpace(r.Lang) != "" {
+		sb.WriteString(fmt.Sprintf("\n\t\"lang\": %s", r.Lang))
+	}
+	if strings.TrimSpace(r.Code) != "" {
+		sb.WriteString(fmt.Sprintf("\n\t\"code\":\n%s", r.Code))
+	}
+	return sb.String()
 }
