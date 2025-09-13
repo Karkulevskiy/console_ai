@@ -2,13 +2,19 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"go_ai/domain"
 	"go_ai/logging"
+	"net/url"
+	"os"
 	"strings"
 
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
+
+var currApiKey = ""
 
 func newModelList() *tview.List {
 	models, err := getAvailableModels()
@@ -56,7 +62,7 @@ func newHelpBar() *tview.TextView {
 	return help
 }
 
-func setPromptInputCapture(input *tview.TextArea, modelList *tview.List, responseBox *tview.TextView) {
+func setPromptInputCapture(app *tview.Application, flex *tview.Flex, input *tview.TextArea, modelList *tview.List, responseBox *tview.TextView) {
 	inHandler := newInputHandler()
 	input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() != tcell.KeyEnter {
@@ -67,7 +73,14 @@ func setPromptInputCapture(input *tview.TextArea, modelList *tview.List, respons
 		if strings.TrimSpace(prompt) == "" {
 			return nil
 		}
-		out := inHandler(context.Background(), prompt, model)
+		if strings.HasPrefix(model, "googleai") {
+			// TODO это работает пока что только для google херни
+			callback := func() {
+				app.SetFocus(flex)
+			}
+			ensureModelAPIKey(app, flex, model, callback)
+		}
+		out := inHandler(context.Background(), prompt, model, currApiKey)
 		input.SetText("", true)
 		responseBox.SetText(out)
 		return nil
@@ -92,4 +105,63 @@ func setAppInputCapture(app *tview.Application, focusables []tview.Primitive) {
 		}
 		return event
 	})
+}
+
+func getModelUrl(modelName string) string {
+	params := url.Values{"model": []string{modelName}}
+	params.Encode()
+	return modelApiKeyUrl + "?" + params.Encode()
+}
+
+func ensureModelAPIKey(app *tview.Application, flex *tview.Flex, modelName string, callback func()) {
+	if currApiKey != "" {
+		return
+	}
+	logging.Log("Идем сюда")
+	apiKey, err := getStr(getModelUrl(modelName))
+	logging.Log(fmt.Sprintf("Теперь сюда, длина: %d\n", len(apiKey)))
+	logging.Log(fmt.Sprintf("Апи ключ: %s\n", apiKey))
+	if err != nil {
+		logging.Log(fmt.Sprintf("failed to get api key: %v", err.Error()))
+	}
+	if apiKey = strings.TrimSpace(apiKey); apiKey != "" {
+		logging.Log("Теперь сюда11")
+		currApiKey = apiKey
+		if err := os.Setenv("GEMINI_API_KEY", currApiKey); err != nil {
+			logging.Log(fmt.Sprintf("failed to set env var: %v", err.Error()))
+		}
+		logging.Log("Теперь сюда11")
+		logging.Log(apiKey)
+		callback()
+		return
+	}
+
+	form := tview.NewForm().AddPasswordField("Введите API ключ для "+modelName, "", 40, '*', nil)
+	form.AddButton("OK", func() {
+		defer callback()
+		inputApiKey := form.GetFormItem(0).(*tview.InputField).GetText()
+		inputApiKey = strings.TrimSpace(inputApiKey)
+
+		logging.Log("Теперь сюда1")
+		if inputApiKey == "" {
+			return
+		}
+
+		logging.Log("Теперь сюда2")
+		if err := put(modelApiKeyUrl, domain.Model{Model: modelName, APIKey: inputApiKey}); err != nil {
+			logging.Log(err.Error())
+		}
+
+		logging.Log("Теперь сюда3")
+		app.SetRoot(flex, true).SetFocus(flex)
+		currApiKey = inputApiKey
+		if err := os.Setenv("GEMINI_API_KEY", currApiKey); err != nil {
+			logging.Log(fmt.Sprintf("failed to set env var: %v", err.Error()))
+		}
+
+		logging.Log("Теперь сюда4")
+	})
+
+	form.SetBorder(true).SetTitle("API Key Required").SetTitleAlign(tview.AlignLeft)
+	app.SetRoot(form, true).SetFocus(form)
 }

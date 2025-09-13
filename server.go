@@ -20,10 +20,15 @@ func startServer() {
 
 	e.POST("/", askAi)
 	e.POST("/tries", askAiWithManyTries)
+
 	e.GET("/models", getModelsHandler)
+	e.GET("/model", getModelHandler)
 	e.POST("/models", addModelHandler)
-	e.DELETE("/models", deleteModelHandler)
 	e.PUT("/models", updateModelHandler)
+	e.DELETE("/models", deleteModelHandler)
+
+	e.GET("/model/api_key", getModelAPIKeyHandler)
+	e.PUT("/model/api_key", updateModelAPIKeyHandler)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)

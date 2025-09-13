@@ -43,8 +43,9 @@ func newFlow(g *genkit.Genkit) *core.Flow[domain.Request, domain.Response, struc
 }
 
 func newGenkit(ctx context.Context, req domain.Request) *genkit.Genkit {
+	slog.Info(fmt.Sprintf("api KEY: %s\n", req.APIKey))
 	return genkit.Init(ctx,
-		genkit.WithPlugins(&googlegenai.GoogleAI{}),
+		genkit.WithPlugins(&googlegenai.GoogleAI{APIKey: req.APIKey}),
 		genkit.WithDefaultModel(req.GetModel()),
 	)
 }

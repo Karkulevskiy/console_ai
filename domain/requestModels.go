@@ -6,8 +6,15 @@ import (
 )
 
 type Request struct {
-	Input string `json:"input,omitempty"`
-	Model string `json:"model,omitempty"`
+	Input  string `json:"input,omitempty"`
+	Model  string `json:"model,omitempty"`
+	APIKey string `json:"apiKey,omitempty"`
+}
+
+type Model struct {
+	Id     int    `json:"id,omitempty"`
+	Model  string `json:"model,omitempty"`
+	APIKey string `json:"apiKey,omitempty"`
 }
 
 func (r Request) GetModel() string {

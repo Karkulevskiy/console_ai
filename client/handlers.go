@@ -13,9 +13,14 @@ import (
 	"github.com/alecthomas/chroma/styles"
 )
 
-func newInputHandler() func(context.Context, string, string) string {
-	return func(ctx context.Context, prompt, model string) string {
-		out, err := post(model, prompt)
+func newInputHandler() func(context.Context, string, string, string) string {
+	return func(ctx context.Context, prompt, model, apiKey string) string {
+		req := domain.Request{
+			Input:  prompt,
+			Model:  model,
+			APIKey: apiKey,
+		}
+		out, err := post[domain.Request, domain.Response](req, serverUrl)
 		if err != nil {
 			return "oops, smth went wrong :("
 		}
@@ -37,7 +42,7 @@ func newInputHandler() func(context.Context, string, string) string {
 }
 
 func getAvailableModels() ([]string, error) {
-	return get[[]string](availableModelsUrl)
+	return getWithType[[]string](availableModelsUrl)
 }
 
 func addTabsToCode(code string) string {

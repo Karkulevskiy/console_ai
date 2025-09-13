@@ -11,9 +11,6 @@ func main() {
 	input := newInput()
 	helpBar := newHelpBar()
 
-	setPromptInputCapture(input, modelList, responseBox)
-	setAppInputCapture(app, []tview.Primitive{modelList, responseBox, input})
-
 	flex := tview.NewFlex().
 		AddItem(modelList, 20, 1, true).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
@@ -21,6 +18,9 @@ func main() {
 			AddItem(input, 0, 1, false).
 			AddItem(helpBar, 3, 1, false),
 			0, 3, false)
+
+	setPromptInputCapture(app, flex, input, modelList, responseBox)
+	setAppInputCapture(app, []tview.Primitive{modelList, responseBox, input})
 
 	// TODO
 	// Добавить изменение цвета, что ожидаем ответ

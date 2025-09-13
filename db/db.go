@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"go_ai/domain"
+	"go_ai/encrypt"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -66,7 +68,8 @@ func InitDB() error {
 	createTable := `
     CREATE TABLE IF NOT EXISTS models (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL
+        name TEXT UNIQUE NOT NULL,
+		api_key TEXT
     );`
 	_, err = db.Exec(createTable)
 	if err != nil {
@@ -94,6 +97,15 @@ func GetAvailableModels(ctx context.Context) ([]string, error) {
 	return models, nil
 }
 
+func GetModel(ctx context.Context, name string) (domain.Model, error) {
+	row := db.QueryRowContext(ctx, "SELECT model FROM models WHERE name = ?", name)
+	var model domain.Model
+	if err := row.Scan(&model); err != nil {
+		return domain.Model{}, err
+	}
+	return model, nil
+}
+
 func AddModel(ctx context.Context, name string) error {
 	_, err := db.ExecContext(ctx, "INSERT INTO models(name) VALUES(?)", name)
 	return err
@@ -104,7 +116,41 @@ func DeleteModel(ctx context.Context, name string) error {
 	return err
 }
 
-func UpdateModel(ctx context.Context, oldName, newName string) error {
+func UpdateModel(ctx context.Context, oldName, newName, apiKey string) error {
+	var encryptedKey string
+	var err error
+	if apiKey != "" {
+		encryptedKey, err = encrypt.Encrypt(apiKey)
+		if err != nil {
+			return err
+		}
+	}
+	_, err = db.ExecContext(ctx, "UPDATE models SET name = ?, api_key = ? WHERE name = ?", newName, encryptedKey, oldName)
+	return err
+}
+
+func UpdateModelName(ctx context.Context, oldName, newName string) error {
 	_, err := db.ExecContext(ctx, "UPDATE models SET name = ? WHERE name = ?", newName, oldName)
 	return err
+}
+
+func UpdateModelAPIKey(ctx context.Context, name, apiKey string) error {
+	encryptedKey, err := encrypt.Encrypt(apiKey)
+	if err != nil {
+		return err
+	}
+	_, err = db.ExecContext(ctx, "UPDATE models SET api_key = ? WHERE name = ?", encryptedKey, name)
+	return err
+}
+
+func GetModelAPIKey(ctx context.Context, name string) (string, error) {
+	row := db.QueryRowContext(ctx, "SELECT api_key FROM models WHERE name = ?", name)
+	var encryptedKey sql.NullString
+	if err := row.Scan(&encryptedKey); err != nil {
+		return "", err
+	}
+	if !encryptedKey.Valid || encryptedKey.String == "" {
+		return "", nil
+	}
+	return encrypt.Decrypt(encryptedKey.String)
 }
