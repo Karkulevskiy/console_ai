@@ -16,7 +16,7 @@ import (
 // TODO функционал выбора модели!!
 
 func AskAI(ctx context.Context, req domain.Request) (domain.Response, error) {
-	return domain.Response{Output: "Mock output", Code: "print('Hello')"}, nil
+	// return domain.Response{Output: "Mock output", Code: "print('Hello')"}, nil
 	g := newGenkit(ctx, req)
 	flow := newFlow(g)
 	resp, err := flow.Run(ctx, req)
@@ -32,14 +32,11 @@ func AskAIWithManyTries(ctx context.Context, req domain.Request) (domain.Respons
 }
 
 func newFlow(g *genkit.Genkit) *core.Flow[domain.Request, domain.Response, struct{}] {
-	return genkit.DefineFlow(g, "", func(ctx context.Context, req domain.Request) (domain.Response, error) {
+	return genkit.DefineFlow(g, "default flow", func(ctx context.Context, req domain.Request) (domain.Response, error) {
 		prompt := req.Input
 		aiOutput, _, err := genkit.GenerateData[domain.Response](ctx, g, ai.WithPrompt(prompt), ai.WithMaxTurns(1))
-		for err != nil {
-			aiOutput, _, err = genkit.GenerateData[domain.Response](ctx, g, ai.WithPrompt(prompt), ai.WithMaxTurns(1))
-			if err != nil {
-				slog.Error(fmt.Sprintf("failed to generate recipe: %v", err))
-			}
+		if err != nil {
+			slog.Error(fmt.Sprintf("failed to generate recipe: %v", err))
 		}
 		return *aiOutput, nil
 	})

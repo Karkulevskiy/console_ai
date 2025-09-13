@@ -1,9 +1,6 @@
 package main
 
 import (
-	"context"
-
-	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -12,22 +9,10 @@ func main() {
 	modelList := newModelList()
 	responseBox := newResponseBox()
 	input := newInput()
-	inHandler := newInputHandler()
 	helpBar := newHelpBar()
 
-	input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEnter {
-			prompt := input.GetText()
-			model, _ := modelList.GetItemText(modelList.GetCurrentItem())
-			if prompt != "" {
-				out := inHandler(context.Background(), prompt, model)
-				input.SetText("", true)
-				responseBox.SetText(out)
-			}
-			return nil
-		}
-		return event
-	})
+	setPromptInputCapture(input, modelList, responseBox)
+	setAppInputCapture(app, []tview.Primitive{modelList, responseBox, input})
 
 	flex := tview.NewFlex().
 		AddItem(modelList, 20, 1, true).
@@ -37,25 +22,9 @@ func main() {
 			AddItem(helpBar, 3, 1, false),
 			0, 3, false)
 
-	focusables := []tview.Primitive{modelList, responseBox, input}
-	focusIndex := 0
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyTAB:
-			focusIndex = (focusIndex + 1) % len(focusables)
-			app.SetFocus(focusables[focusIndex])
-			return nil
-		case tcell.KeyBacktab:
-			focusIndex = (focusIndex - 1 + len(focusables)) % len(focusables)
-			app.SetFocus(focusables[focusIndex])
-			return nil
-		case tcell.KeyEsc:
-			app.Stop()
-			return nil
-		}
-		return event
-	})
-
+	// TODO
+	// Добавить изменение цвета, что ожидаем ответ
+	// Добавить экспорт api ключика, ну и собственно проверку этого
 	if err := app.SetRoot(flex, true).
 		EnableMouse(false).
 		EnablePaste(true).

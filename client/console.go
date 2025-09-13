@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"go_ai/logging"
+	"strings"
 
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
@@ -52,4 +54,42 @@ func newHelpBar() *tview.TextView {
 			"[yellow]ESC[-]: выход")
 	help.SetBorder(true).SetTitle("Подсказки")
 	return help
+}
+
+func setPromptInputCapture(input *tview.TextArea, modelList *tview.List, responseBox *tview.TextView) {
+	inHandler := newInputHandler()
+	input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() != tcell.KeyEnter {
+			return event
+		}
+		prompt := input.GetText()
+		model, _ := modelList.GetItemText(modelList.GetCurrentItem())
+		if strings.TrimSpace(prompt) == "" {
+			return nil
+		}
+		out := inHandler(context.Background(), prompt, model)
+		input.SetText("", true)
+		responseBox.SetText(out)
+		return nil
+	})
+}
+
+func setAppInputCapture(app *tview.Application, focusables []tview.Primitive) {
+	focusIndex := 0
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyTAB:
+			focusIndex = (focusIndex + 1) % len(focusables)
+			app.SetFocus(focusables[focusIndex])
+			return nil
+		case tcell.KeyBacktab:
+			focusIndex = (focusIndex - 1 + len(focusables)) % len(focusables)
+			app.SetFocus(focusables[focusIndex])
+			return nil
+		case tcell.KeyEsc:
+			app.Stop()
+			return nil
+		}
+		return event
+	})
 }
