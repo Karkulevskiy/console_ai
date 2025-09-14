@@ -117,21 +117,15 @@ func ensureModelAPIKey(app *tview.Application, flex *tview.Flex, modelName strin
 	if currApiKey != "" {
 		return
 	}
-	logging.Log("Идем сюда")
 	apiKey, err := getStr(getModelUrl(modelName))
-	logging.Log(fmt.Sprintf("Теперь сюда, длина: %d\n", len(apiKey)))
-	logging.Log(fmt.Sprintf("Апи ключ: %s\n", apiKey))
 	if err != nil {
 		logging.Log(fmt.Sprintf("failed to get api key: %v", err.Error()))
 	}
-	if apiKey = strings.TrimSpace(apiKey); apiKey != "" {
-		logging.Log("Теперь сюда11")
+	if apiKey = strings.TrimSpace(apiKey); apiKey != "" && len(apiKey) > 5 {
 		currApiKey = apiKey
 		if err := os.Setenv("GEMINI_API_KEY", currApiKey); err != nil {
 			logging.Log(fmt.Sprintf("failed to set env var: %v", err.Error()))
 		}
-		logging.Log("Теперь сюда11")
-		logging.Log(apiKey)
 		callback()
 		return
 	}
@@ -142,24 +136,19 @@ func ensureModelAPIKey(app *tview.Application, flex *tview.Flex, modelName strin
 		inputApiKey := form.GetFormItem(0).(*tview.InputField).GetText()
 		inputApiKey = strings.TrimSpace(inputApiKey)
 
-		logging.Log("Теперь сюда1")
 		if inputApiKey == "" {
 			return
 		}
 
-		logging.Log("Теперь сюда2")
 		if err := put(modelApiKeyUrl, domain.Model{Model: modelName, APIKey: inputApiKey}); err != nil {
 			logging.Log(err.Error())
 		}
 
-		logging.Log("Теперь сюда3")
 		app.SetRoot(flex, true).SetFocus(flex)
 		currApiKey = inputApiKey
 		if err := os.Setenv("GEMINI_API_KEY", currApiKey); err != nil {
 			logging.Log(fmt.Sprintf("failed to set env var: %v", err.Error()))
 		}
-
-		logging.Log("Теперь сюда4")
 	})
 
 	form.SetBorder(true).SetTitle("API Key Required").SetTitleAlign(tview.AlignLeft)

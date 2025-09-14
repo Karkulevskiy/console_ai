@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"go_ai/domain"
+	"go_ai/logging"
 	"log/slog"
+	"os"
 	"sync"
 
 	"github.com/firebase/genkit/go/ai"
@@ -14,11 +16,34 @@ import (
 )
 
 // TODO функционал выбора модели!!
+// Нужно выдавать только google модельки
+
+var (
+	modelToApis = map[string]string{}
+	once        sync.Once
+)
+
+// TODO подумать про шифрование апи ключиков
+func setEnvApiKey(modelName, newApiKey string) {
+	oldApiKey, ok := modelToApis[modelName]
+	if ok && oldApiKey != "" && newApiKey == oldApiKey {
+		return
+	}
+	// TODO обновление apiKey у модели в БД
+	// TODO пока не работает обновление
+	once.Do(func() {
+		if err := os.Setenv("GEMINI_API_KEY", newApiKey); err != nil {
+			logging.Log(fmt.Sprintf("failed to set env var: %v", err.Error()))
+		}
+		modelToApis[modelName] = newApiKey
+	})
+}
 
 func AskAI(ctx context.Context, req domain.Request) (domain.Response, error) {
 	// return domain.Response{Output: "Mock output", Code: "print('Hello')"}, nil
 	g := newGenkit(ctx, req)
 	flow := newFlow(g)
+	setEnvApiKey(req.Model, req.APIKey)
 	resp, err := flow.Run(ctx, req)
 	if err != nil {
 		slog.Error("failed to run prompt")
@@ -43,9 +68,8 @@ func newFlow(g *genkit.Genkit) *core.Flow[domain.Request, domain.Response, struc
 }
 
 func newGenkit(ctx context.Context, req domain.Request) *genkit.Genkit {
-	slog.Info(fmt.Sprintf("api KEY: %s\n", req.APIKey))
 	return genkit.Init(ctx,
-		genkit.WithPlugins(&googlegenai.GoogleAI{APIKey: req.APIKey}),
+		genkit.WithPlugins(&googlegenai.GoogleAI{}),
 		genkit.WithDefaultModel(req.GetModel()),
 	)
 }
